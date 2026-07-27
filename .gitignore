@@ -5,3 +5,6 @@ build/
 
 # Permisos locales de Claude Code: son de esta maquina, no del proyecto.
 .claude/settings.local.json
+
+# Runbook con rutas y usuario de esta maquina. No sale del disco.
+SETUP.local.md
