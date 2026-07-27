@@ -1,0 +1,7 @@
+node_modules/
+build/
+*.log
+.env
+
+# Permisos locales de Claude Code: son de esta maquina, no del proyecto.
+.claude/settings.local.json
