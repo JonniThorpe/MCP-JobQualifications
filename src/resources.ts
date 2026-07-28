@@ -79,6 +79,22 @@ export function registerResources(server: McpServer): void {
   );
 
   server.registerResource(
+    "cv-data",
+    "profile://cv-data",
+    {
+      title: "Catalogo del CV",
+      description:
+        "El contenido del CV troceado en ids: cada bullet, tag y proyecto por separado. Es lo unico entre lo que render_cv puede elegir, asi que sirve para saber que hay disponible antes de adaptar un CV.",
+      mimeType: "application/json"
+    },
+    async (uri) => {
+      const content = readIfExists(p.cvData);
+      if (content === undefined) return fileOrHint(uri.href, p.cvData, "cv-data.json");
+      return { contents: [{ uri: uri.href, mimeType: "application/json", text: content }] };
+    }
+  );
+
+  server.registerResource(
     "criterios",
     "profile://criteria",
     {

@@ -8,6 +8,7 @@ import {
   today,
   writeAtomic
 } from "./lib/files.js";
+import { cvSelectionShape, parseCvBase, renderCv } from "./lib/cv.js";
 import { confirmSkill } from "./lib/graduate.js";
 import {
   addOfferNote,
@@ -282,6 +283,40 @@ export function registerTools(server: McpServer): void {
         if (!r.changed) return fail(r.message);
         writeAtomic(file, r.content);
         return ok(`${safe}: ${r.message}`);
+      })
+  );
+
+  // ------------------------------------------------------------------- cv ---
+
+  server.registerTool(
+    "render_cv",
+    {
+      title: "Generar CV adaptado a una oferta",
+      description:
+        "Escribe en salidas/cv-<id>.html una version del CV adaptada a una oferta concreta: elige que proyectos, bullets y tags entran y en que orden. NO puede inventar contenido: todo debe existir ya en perfil/cv-data.json y la llamada falla entera si citas un id o un tag que no esta ahi. Solo headline y summary admiten texto libre, porque son encuadre. Omite cualquier seccion para dejarla completa tal cual. NO lo llames por tu cuenta al terminar un analisis: propon la adaptacion y espera a que el usuario la pida.",
+      inputSchema: cvSelectionShape,
+      annotations: { destructiveHint: true, idempotentHint: true }
+    },
+    async (seleccion) =>
+      guard(() => {
+        const safe = assertSafeId(seleccion.offerId);
+        const base = parseCvBase(readRequired(p.cvData, "perfil/cv-data.json"));
+        const plantilla = readRequired(p.cvTemplate, "templates/cv.html");
+        const r = renderCv(base, { ...seleccion, offerId: safe }, plantilla, today());
+
+        const destino = p.cvOut(safe);
+        writeAtomic(destino, r.html);
+
+        return ok(
+          [
+            `CV adaptado escrito en salidas/cv-${safe}.html.`,
+            `Ocupacion estimada: lateral ${r.usoSidebar.toFixed(0)}%, principal ${r.usoMain.toFixed(0)}%.`,
+            ...(r.avisos.length > 0 ? ["", ...r.avisos.map((a) => `AVISO: ${a}`)] : []),
+            "",
+            `Abrelo en el navegador y Ctrl+P para guardarlo como PDF (A4, sin margenes).`,
+            `Recuerda que es la version de diseno: para portales con ATS sigue enviando el CV plano.`
+          ].join("\n")
+        );
       })
   );
 
