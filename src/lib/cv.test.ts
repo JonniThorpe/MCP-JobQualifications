@@ -120,7 +120,7 @@ test("cv-data.json real cumple el esquema y renderiza", () => {
   const json = fs.readFileSync(paths().cvData, "utf8");
   const base = parseCvBase(json);
   const r = renderCv(base, { offerId: "2026-07-test" }, PLANTILLA, "2026-07-28");
-  assert.ok(r.html.includes(base.identity.nameBottom));
+  assert.ok(r.html.includes(base.identity.name));
 });
 
 test("un cv-data.json mal formado se explica, no revienta con un stack trace", () => {

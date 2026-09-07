@@ -24,8 +24,7 @@ const LinkSchema = z.object({ label: z.string().min(1), href: z.string().min(1) 
 
 const CvBaseSchema = z.object({
   identity: z.object({
-    nameTop: z.string().min(1),
-    nameBottom: z.string().min(1),
+    name: z.string().min(1),
     headline: z.string().min(1),
     location: z.string().min(1),
     links: z.array(LinkSchema)
@@ -476,6 +475,24 @@ function cabeceraEntrada(titulo: string, org: string | undefined, fechas: string
   ].join("\n");
 }
 
+/**
+ * Educacion: titulo, centro y fechas en UNA sola linea de texto.
+ *
+ * No usa el `.dates` alineado a la derecha de cabeceraEntrada a proposito. Los
+ * titulos academicos son largos y envuelven a dos lineas; cuando eso pasa, la
+ * fecha queda flotando en una "columna" derecha que los extractores de texto
+ * (y con ellos los ATS) leen aparte, y las tres fechas acaban apiladas junto a
+ * la primera titulacion. En el flujo de texto eso no puede ocurrir.
+ */
+function lineaEducacion(titulo: string, org: string | undefined, fechas: string | undefined): string {
+  const partes = [
+    `<span class="edu-role">${escapar(titulo)}</span>`,
+    ...(org ? [`<span class="org">${escapar(org)}</span>`] : []),
+    ...(fechas ? [`<span class="dates">${escapar(fechas)}</span>`] : [])
+  ];
+  return `        <div class="edu-line">${partes.join(`<span class="edu-dot">·</span>`)}</div>`;
+}
+
 function seccion(titulo: string, entradas: string[]): string {
   return [
     `    <section>`,
@@ -507,6 +524,22 @@ function bloqueMain(sel: Resuelta): string {
     );
   }
 
+  if (sel.education.length > 0) {
+    secciones.push(
+      seccion(
+        "Education",
+        sel.education.map((e) =>
+          [
+            `      <div class="entry">`,
+            lineaEducacion(e.role, e.org, e.dates),
+            ...(e.note ? [`        <div class="proj-stack">${escapar(e.note)}</div>`] : []),
+            `      </div>`
+          ].join("\n")
+        )
+      )
+    );
+  }
+
   if (sel.projects.length > 0) {
     secciones.push(
       seccion(
@@ -520,22 +553,6 @@ function bloqueMain(sel: Resuelta): string {
               (l) =>
                 `        <div class="proj-line"><b>${escapar(l.label)}:</b> ${escapar(l.text)}</div>`
             ),
-            `      </div>`
-          ].join("\n")
-        )
-      )
-    );
-  }
-
-  if (sel.education.length > 0) {
-    secciones.push(
-      seccion(
-        "Education",
-        sel.education.map((e) =>
-          [
-            `      <div class="entry">`,
-            cabeceraEntrada(e.role, e.org, e.dates),
-            ...(e.note ? [`        <div class="proj-stack">${escapar(e.note)}</div>`] : []),
             `      </div>`
           ].join("\n")
         )
@@ -588,9 +605,9 @@ export function renderCv(
     : "";
 
   const html = plantilla
-    .replace("{{TITLE}}", `${escapar(base.identity.nameTop)} ${escapar(base.identity.nameBottom)} — CV`)
+    .replace("{{TITLE}}", `${escapar(base.identity.name)} — CV`)
     .replace("{{STAMP}}", escapar(sello))
-    .replace("{{NAME}}", `${escapar(base.identity.nameTop)}<br>${escapar(base.identity.nameBottom)}`)
+    .replace("{{NAME}}", escapar(base.identity.name))
     .replace("{{HEADLINE}}", escaparConSaltos(sel.headline))
     .replace("{{SUMMARY}}", escapar(sel.summary))
     .replace("{{CONTACT}}", bloqueContacto(base))

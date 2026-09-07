@@ -54,8 +54,7 @@ Hipotesis de valor que aun no ha pedido ninguna oferta.
  */
 export const CV_BASE = {
   identity: {
-    nameTop: "JONATAN",
-    nameBottom: "THORPE PLAZA",
+    name: "Jonatan Thorpe Plaza",
     headline: "Full-Stack Engineer ·<br>Applied Machine Learning",
     location: "Alhaurin el Grande, Malaga, Spain",
     links: [
