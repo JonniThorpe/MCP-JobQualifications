@@ -127,3 +127,35 @@ test("un cv-data.json mal formado se explica, no revienta con un stack trace", (
   assert.throws(() => parseCvBase("{ esto no es json"), /no es JSON valido/);
   assert.throws(() => parseCvBase('{"summary":"x"}'), /no cumple el esquema/);
 });
+
+test("un proyecto se puede recortar a las lineas que aportan a la oferta", () => {
+  const r = render({ offerId: "x", projects: [{ id: "scannet", lines: ["Build"] }] });
+  assert.match(r.html, /<b>Build:<\/b>/);
+  assert.equal(r.html.includes("<b>Need:</b>"), false);
+  assert.equal(r.html.includes("<b>Idea:</b>"), false);
+  // El proyecto sigue estando: se encoge, no se borra.
+  assert.match(r.html, /Scannet/);
+});
+
+test("recortar lineas gana sitio sin sacar el proyecto del CV", () => {
+  const todas = render({ offerId: "x", projects: ["scannet", "whatsapp", "portfolio"] });
+  const soloBuild = render({
+    offerId: "x",
+    projects: [
+      { id: "scannet", lines: ["Build"] },
+      { id: "whatsapp", lines: ["Build"] },
+      { id: "portfolio", lines: ["Build"] }
+    ]
+  });
+  assert.ok(soloBuild.usoMain < todas.usoMain);
+  for (const titulo of ["Scannet", "AI Order Automation", "Self-hosted Portfolio"]) {
+    assert.ok(soloBuild.html.includes(titulo), `falta ${titulo}`);
+  }
+});
+
+test("una linea inventada tumba el render y dice cuales hay", () => {
+  assert.throws(
+    () => render({ offerId: "x", projects: [{ id: "scannet", lines: ["Build", "Deploy"] }] }),
+    /no existen las lineas "Deploy".*Disponibles: Need, Idea, Build/s
+  );
+});

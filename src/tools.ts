@@ -293,7 +293,7 @@ export function registerTools(server: McpServer): void {
     {
       title: "Generar CV adaptado a una oferta",
       description:
-        "Escribe en salidas/cv-<id>.html una version del CV adaptada a una oferta concreta: elige que proyectos, bullets y tags entran y en que orden. NO puede inventar contenido: todo debe existir ya en perfil/cv-data.json y la llamada falla entera si citas un id o un tag que no esta ahi. Solo headline y summary admiten texto libre, porque son encuadre. Omite cualquier seccion para dejarla completa tal cual. NO lo llames por tu cuenta al terminar un analisis: propon la adaptacion y espera a que el usuario la pida.",
+        "Escribe en salidas/cv-<id>.html una version del CV adaptada a una oferta concreta: elige que proyectos, que lineas de cada proyecto, que bullets y que tags entran y en que orden. Si no cabe todo, recorta lineas dentro de cada proyecto antes que quitar un proyecto entero. NO puede inventar contenido: todo debe existir ya en perfil/cv-data.json y la llamada falla entera si citas un id o un tag que no esta ahi. Solo headline y summary admiten texto libre, porque son encuadre. Omite cualquier seccion para dejarla completa tal cual. NO lo llames por tu cuenta al terminar un analisis: propon la adaptacion y espera a que el usuario la pida.",
       inputSchema: cvSelectionShape,
       annotations: { destructiveHint: true, idempotentHint: true }
     },

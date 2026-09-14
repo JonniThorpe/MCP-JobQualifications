@@ -116,9 +116,24 @@ export const cvSelectionShape = {
     .optional()
     .describe("Puestos a mostrar, en orden. Omitelo para incluirlos todos."),
   projects: z
-    .array(z.string())
+    .array(
+      z.union([
+        z.string(),
+        z.object({
+          id: z.string().min(1).describe("Id del proyecto en cv-data.json. Ej: 'scannet'."),
+          lines: z
+            .array(z.string())
+            .optional()
+            .describe(
+              "Labels de las lineas de ESE proyecto, en orden. Ej: ['Build','Ops']. Omitelo para incluirlas todas."
+            )
+        })
+      ])
+    )
     .optional()
-    .describe("Ids de proyectos, en orden. Aqui es donde mas se gana adaptando: pon delante los que tocan la oferta y quita los que no. Omitelo para incluirlos todos."),
+    .describe(
+      "Proyectos a mostrar, en orden: el id suelto para el proyecto entero, o {id, lines} para dejar solo las lineas que aportan algo a esta oferta. Aqui es donde mas se gana adaptando: pon delante los que la tocan y, si no cabe todo, recorta lineas antes que quitar un proyecto. Omitelo para incluirlos todos."
+    ),
   education: z
     .array(z.string())
     .optional()
@@ -397,7 +412,38 @@ function resolver(base: CvBase, sel: CvSelection): Resuelta {
     return salida;
   };
 
-  const projects = porIds(base.projects, sel.projects, "projects");
+  // Un proyecto se puede pedir entero (su id) o recortado a las lineas que
+  // aportan algo a esta oferta ({id, lines}): cuando el CV desborda, la salida
+  // es encoger cada proyecto, no borrar uno y perder la evidencia que acredita.
+  let projects = base.projects;
+  if (sel.projects !== undefined) {
+    projects = [];
+    for (const pedido of sel.projects) {
+      const id = typeof pedido === "string" ? pedido : pedido.id;
+      const pedidas = typeof pedido === "string" ? undefined : pedido.lines;
+      const proj = base.projects.find((x) => x.id === id);
+      if (!proj) {
+        errores.push(`projects: no existe "${id}". Disponibles: ${disponibles(base.projects)}.`);
+        continue;
+      }
+      let lines = proj.lines;
+      if (pedidas !== undefined) {
+        const invalidas = pedidas.filter((l) => !proj.lines.some((x) => x.label === l));
+        if (invalidas.length > 0) {
+          errores.push(
+            `projects "${proj.id}": no existen las lineas ${invalidas
+              .map((l) => `"${l}"`)
+              .join(", ")}. Disponibles: ${proj.lines.map((x) => x.label).join(", ")}.`
+          );
+        }
+        lines = pedidas
+          .map((l) => proj.lines.find((x) => x.label === l))
+          .filter((x): x is { label: string; text: string } => x !== undefined);
+      }
+      projects.push({ ...proj, lines });
+    }
+  }
+
   const education = porIds(base.education, sel.education, "education");
 
   if (errores.length > 0) {
