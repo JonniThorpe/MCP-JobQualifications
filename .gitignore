@@ -8,3 +8,9 @@ build/
 
 # Runbook con rutas y usuario de esta maquina. No sale del disco.
 SETUP.local.md
+
+# CV guardado desde el navegador en la raiz: son datos personales y su sitio es
+# la boveda, no el repo.
+/*CV.html
+/*CV_files/
+/*CV.pdf
