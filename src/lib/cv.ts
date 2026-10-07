@@ -8,8 +8,8 @@ import { z } from "zod";
  * 1. El modelo NO escribe contenido factico. Solo elige ids que ya existen en
  *    cv-data.json. Si una seleccion cita un id o un tag inexistente el render
  *    falla entero. Un prompt pidiendo "no inventes" es una suplica; esto es una
- *    garantia. Las unicas excepciones son headline y summary, que son
- *    encuadre y no afirmacion de hechos.
+ *    garantia. Las unicas excepciones son headline, summary y location, que
+ *    son encuadre y no afirmacion de hechos.
  *
  * 2. La plantilla tiene .page con height fija y overflow:hidden, asi que lo que
  *    no cabe DESAPARECE sin error. Por eso se estima la altura antes de
@@ -84,6 +84,12 @@ export const cvSelectionShape = {
     .optional()
     .describe(
       "Titular bajo el nombre. Texto libre (admite <br>), es encuadre y no afirmacion de hechos. Omitelo para dejar el de cv-data.json."
+    ),
+  location: z
+    .string()
+    .optional()
+    .describe(
+      "Linea de ubicacion del contacto. Texto libre: donde vives y donde puedes trabajar. Ej: 'Malaga, Spain · Open to relocating to Madrid'. Omitela para dejar la de cv-data.json."
     ),
   summary: z
     .string()
@@ -245,7 +251,7 @@ function altoSidebar(sel: Resuelta): number {
 
   h += lineas(sel.summary, W, 7.8) * alturaLinea(7.8, 1.34) + 3.6;
 
-  const contacto = [sel.base.identity.location, ...sel.base.identity.links.map((l) => l.label)];
+  const contacto = [sel.location, ...sel.base.identity.links.map((l) => l.label)];
   h += contacto.reduce((acc, t) => acc + lineas(t, W, 7.8) * alturaLinea(7.8, 1.34) + 0.8, 0) + 3.8;
 
   // Tech Stack
@@ -320,6 +326,7 @@ function altoMain(sel: Resuelta): number {
 interface Resuelta {
   base: CvBase;
   headline: string;
+  location: string;
   summary: string;
   stack: { label: string; tags: string[] }[];
   experience: CvBase["experience"];
@@ -460,6 +467,7 @@ function resolver(base: CvBase, sel: CvSelection): Resuelta {
   return {
     base,
     headline: sel.headline ?? base.identity.headline,
+    location: sel.location ?? base.identity.location,
     summary: sel.summary ?? base.summary,
     stack,
     experience,
@@ -476,9 +484,10 @@ const escapar = (s: string) =>
 /** El titular es el unico sitio donde un <br> del usuario es intencional. */
 const escaparConSaltos = (s: string) => escapar(s).replace(/&lt;br\s*\/?&gt;/gi, "<br>");
 
-function bloqueContacto(base: CvBase): string {
+function bloqueContacto(sel: Resuelta): string {
+  const base = sel.base;
   return [
-    `      <span>${escapar(base.identity.location)}</span>`,
+    `      <span>${escapar(sel.location)}</span>`,
     ...base.identity.links.map(
       (l) => `      <a href="${escapar(l.href)}">${escapar(l.label)}</a>`
     )
@@ -656,7 +665,7 @@ export function renderCv(
     .replace("{{NAME}}", escapar(base.identity.name))
     .replace("{{HEADLINE}}", escaparConSaltos(sel.headline))
     .replace("{{SUMMARY}}", escapar(sel.summary))
-    .replace("{{CONTACT}}", bloqueContacto(base))
+    .replace("{{CONTACT}}", bloqueContacto(sel))
     .replace("{{STACK}}", bloqueStack(sel.stack))
     .replace("{{LANGUAGES}}", bloqueIdiomas(base))
     .replace("{{MAIN}}", bloqueMain(sel));

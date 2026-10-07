@@ -100,6 +100,13 @@ test("headline y summary admiten texto libre; el <br> del titular sobrevive", ()
   assert.match(r.html, /Resumen a medida para esta oferta\./);
 });
 
+test("location sustituye la ubicacion de cv-data.json solo en esta version", () => {
+  const r = render({ offerId: "x", location: "Malaga, Spain · Open to relocating to Madrid" });
+  assert.match(r.html, /<span>Malaga, Spain · Open to relocating to Madrid<\/span>/);
+  assert.equal(r.html.includes("Alhaurin el Grande"), false);
+  assert.match(render({ offerId: "x" }).html, /Alhaurin el Grande/);
+});
+
 test("el texto se escapa: nada de HTML inyectado desde los datos", () => {
   const r = render({ offerId: "x", summary: "<script>alert(1)</script>" });
   assert.equal(r.html.includes("<script>alert(1)"), false);
