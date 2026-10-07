@@ -87,7 +87,7 @@ export interface BuildOfferInput {
   markdown: string;
   status?: OfferStatus;
   date: string;
-  /** Rango o cifra tal y como lo publica la oferta. Filtro eliminatorio. */
+  /** Rango o cifra tal y como lo publica la oferta. Es un dato, nunca un motivo para descartar. */
   salario?: string;
   /** Puntuacion 0-12 de los seis ejes de criterios.md. */
   score?: number;
